@@ -89,7 +89,7 @@ def main():
 
     col1, mid, col2 = st.beta_columns([1,4,20])
     with col1:
-        st.image('resources/2.png', width=600)
+        st.image('resources/2.PNG', width=600)
     with col2:
         st.write(' ')
 
@@ -361,7 +361,6 @@ def main():
         st.write('Maureen Matshitisho: maureen.mashitisho@gmail.com')
 	
         # Footer 
-        st.image(image, caption='Classification_AE6-Johannesbrug', use_column_width=True)
 
 
 if __name__ == '__main__':
