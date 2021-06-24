@@ -30,6 +30,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 #from textblob import TextBlob
 import re
+import nltk
 from nltk.corpus import stopwords
 from nltk.stem.wordnet import WordNetLemmatizer
 from sklearn.feature_extraction.text import CountVectorizer, TfidfTransformer
@@ -45,77 +46,68 @@ import re
 from nlppreprocess import NLP
 nlp = NLP()
 
-def cleaner(line):
-
-    # Removes RT, url and trailing white spaces
-    line = re.sub(r'^RT ','', re.sub(r'https://t.co/\w+', '', line).strip()) 
-
-    # Removes puctuation
-    punctuation = re.compile("[.;:!\'’‘“”?,\"()\[\]]")
-    tweet = punctuation.sub("", line.lower()) 
-
-    # Removes stopwords
-    nlp_for_stopwords = NLP(replace_words=True, remove_stopwords=True, remove_numbers=True, remove_punctuations=False) 
-    tweet = nlp_for_stopwords.process(tweet) # This will remove stops words that are not necessary. The idea is to keep words like [is, not, was]
-    # https://towardsdatascience.com/why-you-should-avoid-removing-stopwords-aa7a353d2a52
-
-    # tokenisation
-    # We used the split method instead of the word_tokenise library because our tweet is already clean at this point
-    # and the twitter data is not complicated
-    tweet = tweet.split() 
-
-    # POS 
-    pos = pos_tag(tweet)
-
-
-    # Lemmatization
-    lemmatizer = WordNetLemmatizer()
-    tweet = ' '.join([lemmatizer.lemmatize(word, po[0].lower()) if po[0].lower() in ['n', 'r', 'v', 'a'] else word for word, po in pos])
-    # tweet = ' '.join([lemmatizer.lemmatize(word, 'v') for word in tweet])
-
+def data_cleaning(tweet):
+   
+    # Convert to lowercase
+    tweet = tweet.lower() 
+    
+    # Remove mentions or twitter handles   
+    tweet = re.sub('@[\w]*','',tweet)  
+    
+    # Remove url's
+    tweet = re.sub(r'https?:\/\/.*\/\w*', '', tweet)
+    
+    # Remove hashtags
+    tweet = re.sub(r'#\w*', '', tweet)    
+    
+    # Remove numbers
+    tweet = re.sub(r'\d+', '', tweet)  
+    
+    # Remove punctuation
+    tweet = re.sub(r"[,.;':@#?!\&/$]+\ *", ' ', tweet)                  
+    
     return tweet
 
 
 # Vectorizer
-news_vectorizer = open("resources/tfidfvect.pkl","rb")
-tweet_cv = joblib.load(news_vectorizer) # loading your vectorizer from the pkl file
+news_vectorizer = open("resources/cv.pkl","rb")
+tweet_cv = joblib.load(news_vectorizer) 
 
 # Loading raw data
 raw = pd.read_csv("resources/train.csv")
 
-# The main function where we will build the actual app
 def main():
     """Tweet Classifier App with Streamlit """
-
-    # Creates a main title and subheader on your page -
-    # these are static across all pages
+    import streamlit as st
     st.title("Climate Change Tweet Classifer")
-    st.subheader("Climate Change  Belief Analysis Based on Tweets")
+    st.subheader("Climate Change Belief Analysis Based on Tweets")
  
     # Creating sidebar with selection purpose
     # you can create multiple pages this way
-    pages = ["Information", "EDA/Visuals", "Prediction", "App Developers Contacts"]
+    pages = ["About Project", "Data Visuals", "Predict Model", "About Us"]
     selection = st.sidebar.selectbox("Go to page", pages)
 
-    ##creating a sidebar for selection purposes
-    # Building out the "Information" page
-    if selection == "Information":
-        st.info("General Information")
-        st.write('Explorers Explore !!!!!!!!!')
-        # You can read a markdown file from supporting resources folder
-        st.markdown("""Group AE6 has   deployed Machine Learning Algorithms that are able to classify twitter sentiments, based on novel tweet data. 
-        Like any data lovers, these are robust solutions to that can provide access to a 
-        broad base of consumer sentiment, spanning multiple demographic and geographic categories. 
-        So, do you have a Twitter API and ready to scrap? or just have some tweets off the top of your head? 
-        Do explore the rest of this app's buttons.""")
+    col1, mid, col2 = st.beta_columns([1,4,20])
+    with col1:
+        st.image('resources/2.png', width=600)
+    with col2:
+        st.write(' ')
+
+    if selection == "About Project":
+        st.info("Info")
+        st.markdown("""Group AE6 has deployed Machine Learning Algorithms that are able to classify twitter sentiments, based on novel tweet data. 
+        This plotform provides accurate and robust sentimental analysis using Machine Learning models and Algorithms. The models classifies tweets or text based on consumer's sentiment towards climate change.
+        The analysis offers organisations an access to consumer sentiment spanning from wide demographic and geographic categories.
+        Do you have a compiled list of tweets or text that you would like to classify?
+        Then this is the platform to explore and find out what the consumers think""")
 
     st.subheader("Climate Change  Belief Analysis Based on Tweets")
     if st.checkbox('Show raw data'): # data is hidden if box is unchecked
             st.write(raw[['sentiment', 'message']]) # will write the df to the page
 
-    # Building out the EDA page
-    if selection == "EDA/Visuals":	
-        st.info("Graphs and charts created from the raw data. Some of the text is too long and may cut off, feel free to right click on the chart and either save it or open it in a new window to see it properly")	
+    # Creating the EDA page
+    if selection == "Data Visuals":	
+        st.info("Graphs and charts created from the raw data. These graphs and charts show the distributions of tweets sentiments")	
 
         # Number of Messages Per Sentiment
         st.write('Distribution of the sentiments')
@@ -123,18 +115,32 @@ def main():
         raw['sentiment'] = [['Negative', 'Neutral', 'Positive', 'News'][x+1] for x in raw['sentiment']]
         
         # checking the distribution
-        st.write('The numerical proportion of the sentiments')
+        st.write('Distribution')
+        sns.countplot(x='sentiment' ,data = raw, palette='PRGn')
+        plt.ylabel('Count')
+        plt.xlabel('Sentiment')
+        plt.title('Dataset labels distribution')
+        st.pyplot()
+
+
+
+        #Create a violinplot of the dataset
+        st.write('Violin')
+        raw['message_length'] = raw['message'].apply(len)
+        plt.figure(figsize=(8,5)) #Set the figsize to 8 and 5 respectively
+        plt.title('Sentiments vs. Length of tweets') #Add the title of the violin plot
+        sns.violinplot(x='sentiment', y='message_length', data=raw,scale='count') #Add the dimentions of the violin plot
+        plt.ylabel("Length of the tweets") #Y_lable of the plot
+        plt.xlabel("Sentiment Class") 
+        st.pyplot()
+
+
+        # checking the distribution
+        st.write('Dataset labels distribution')
         values = raw['sentiment'].value_counts()/raw.shape[0]
         labels = (raw['sentiment'].value_counts()/raw.shape[0]).index
         colors = ['lightgreen', 'blue', 'purple', 'lightsteelblue']
         plt.pie(x=values, labels=labels, autopct='%1.1f%%', startangle=90, explode= (0.04, 0, 0, 0), colors=colors)
-        st.pyplot()
-        
-        # checking the distribution
-        sns.countplot(x='sentiment' ,data = raw, palette='PRGn')
-        plt.ylabel('Count')
-        plt.xlabel('Sentiment')
-        plt.title('Number of Messages Per Sentiment')
         st.pyplot()
 
         # Popular Tags
@@ -212,7 +218,7 @@ def main():
 
 
     # Building out the predication page
-    if selection == 'Prediction':
+    if selection == 'Predict Model':
 
         st.info('Make Predictions of your Tweet(s) using our ML Model')
 
@@ -233,36 +239,43 @@ def main():
 
 
         if source_selection == 'Single text':
-            ### SINGLE TWEET CLASSIFICATION ###
+            ### Classifying one tweet ###
             st.subheader('Single tweet classification')
 
-            input_text = st.text_area('Enter Text (max. 140 characters):') ##user entering a single text to classify and predict
-            all_ml_models = ["LR","NB","RFOREST","DECISION_TREE"]
-            model_choice = st.selectbox("Choose ML Model",all_ml_models)
-
-            st.info('for more information on the above ML Models please visit: https://datakeen.co/en/8-machine-learning-algorithms-explained-in-human-language/')
+            input_text = st.text_area('Tweet Here:') 
+            all_ml_models = ["Log-Regression","Log-Regression2","SVC-Linear1","SVC-Linear2","SVC-Non_linear2","SVC-Non_linear2"]
+            model_choice = st.selectbox("Select a Model",all_ml_models)
 
 
             prediction_labels = {'Negative':-1,'Neutral':0,'Positive':1,'News':2}
             if st.button('Classify'):
 
                 st.text("Original test ::\n{}".format(input_text))
-                text1 = cleaner(input_text) ###passing the text through the 'cleaner' function
+                text1 = data_cleaning(input_text) 
+                #y = raw[['sentiment']]
                 vect_text = tweet_cv.transform([text1]).toarray()
-                if model_choice == 'LR':
-                    predictor = load_prediction_models("resources/Logistic_regression.pkl")
+                if model_choice == 'Log-Regression':
+                    predictor = load_prediction_models("resources/model.pkl")
+                    prediction = predictor.predict(vect_text)
+                    st.write(prediction)
+                elif model_choice == 'Log-Regression2':
+                    predictor = load_prediction_models("resources/model1.pkl")
                     prediction = predictor.predict(vect_text)
                     # st.write(prediction)
-                elif model_choice == 'RFOREST':
-                    predictor = load_prediction_models("resources/RFOREST_model.pkl")
+                elif model_choice == 'SVC-Linear1':
+                    predictor = load_prediction_models("resources/model2.pkl")
                     prediction = predictor.predict(vect_text)
                     # st.write(prediction)
-                elif model_choice == 'NB':
-                    predictor = load_prediction_models("resources/NB_model.pkl")
+                elif model_choice == 'SVC-linear2':
+                    predictor = load_prediction_models("resources/model1.pkl")
                     prediction = predictor.predict(vect_text)
                     # st.write(prediction)
-                elif model_choice == 'DECISION_TREE':
-                    predictor = load_prediction_models("resources/DTrees_model.pkl")
+                elif model_choice == 'Non-Linear_SVC1':
+                    predictor = load_prediction_models("resources/model1.pkl")
+                    prediction = predictor.predict(vect_text)
+                    # st.write(prediction)
+                elif model_choice == 'Non-Linear_SVC2':
+                    predictor = load_prediction_models("resources/model5.pkl")
                     prediction = predictor.predict(vect_text)
 				# st.write(prediction)
 
@@ -273,10 +286,9 @@ def main():
             ### DATASET CLASSIFICATION ###
             st.subheader('Dataset tweet classification')
 
-            all_ml_models = ["LR","NB","RFOREST","SupportVectorMachine", "MLR", "LDA"]
-            model_choice = st.selectbox("Choose ML Model",all_ml_models)
+            all_ml_models = ["Log-Regression","Log-Regression2","SVC-Linear1","SVC-Linear2", "Non-Linear_SVC1", "Non-Linear_SVC2"]
+            model_choice = st.selectbox("Select a Model",all_ml_models)
 
-            st.info('for more information on the above ML Models please visit: https://datakeen.co/en/8-machine-learning-algorithms-explained-in-human-language/')
 
 
             prediction_labels = {'Negative':-1,'Neutral':0,'Positive':1,'News':2}
@@ -292,40 +304,34 @@ def main():
 
             col = st.text_area('Enter column to classify')
 
-            #col_list = list(text_input[col])
-
-            #low_col[item.lower() for item in tweet]
-            #X = text_input[col]
-
-            #col_class = text_input[col]
             
             if st.button('Classify'):
 
                 st.text("Original test ::\n{}".format(text_input))
-                X1 = text_input[col].apply(cleaner) ###passing the text through the 'cleaner' function
+                X1 = text_input[col].apply(cleaner)
                 vect_text = tweet_cv.transform([X1]).toarray()
-                if model_choice == 'LR':
-                    predictor = load_prediction_models("resources/Logistic_regression.pkl")
+                if model_choice == 'Log-Regression':
+                    predictor = load_prediction_models("resources/model.pkl")
                     prediction = predictor.predict(vect_text)
                     # st.write(prediction)
-                elif model_choice == 'RFOREST':
-                    predictor = load_prediction_models("resources/Random_model.pkl")
+                elif model_choice == 'Log-Regression2':
+                    predictor = load_prediction_models("resources/model1.pkl")
                     prediction = predictor.predict(vect_text)
                     # st.write(prediction)
-                elif model_choice == 'NB':
-                    predictor = load_prediction_models("resources/NB_model.pkl")
+                elif model_choice == 'SVC-Linear1':
+                    predictor = load_prediction_models("resources/model2.pkl")
                     prediction = predictor.predict(vect_text)
                     # st.write(prediction)
-                elif model_choice == 'SupportVectorMachine':
-                    predictor = load_prediction_models("resources/svm_model.pkl")
+                elif model_choice == 'SVC-Linear2':
+                    predictor = load_prediction_models("resources/model3.pkl")
                     prediction = predictor.predict(vect_text)
 
-                elif model_choice == 'MLR':
-                    predictor = load_prediction_models("resources/mlr_model.pkl")
+                elif model_choice == 'Non-Linear_SVC1':
+                    predictor = load_prediction_models("resources/model4.pkl")
                     prediction = predictor.predict(vect_text)
 
-                elif model_choice == 'SupportVectorMachine':
-                    predictor = load_prediction_models("resources/simple_lda_model.pkl")
+                elif model_choice == 'Non-Linear_SVC2':
+                    predictor = load_prediction_models("resources/model5.pkl")
                     prediction = predictor.predict(vect_text)
 
                 
@@ -336,17 +342,17 @@ def main():
 
                 
                 csv = text_input.to_csv(index=False)
-                b64 = base64.b64encode(csv.encode()).decode()  # some strings <-> bytes conversions necessary here
-                href = f'<a href="data:file/csv;base64,{b64}">Download csv file</a>'
+                b64 = base64.b64encode(csv.encode()).decode() 
+                href = f'<a href="data:file/csv;base64,{b64}">Upload csv file</a>'
 
                 st.markdown(href, unsafe_allow_html=True)
 
 
  
-    ##contact page
-    if selection == 'App Developers Contacts':
+    ##About Us
+    if selection == 'About Us':
 
-        st.info('Contact details in case you any query or would like to know more of our designs:')
+        st.info('Project Members')
         st.write('Khuliso Muleka: khuliso.muleka@gmail.com')
         st.write('Shanice Pillay: pillay.shanice18@gmail.com')
         st.write('Seromo Podile: seromopodile@gmail.com')
@@ -355,13 +361,8 @@ def main():
         st.write('Maureen Matshitisho: maureen.mashitisho@gmail.com')
 	
         # Footer 
-        image = Image.open('resources/imgs/EDSA_logo.png')
-
-        st.image(image, caption='Team-SS4-Johannesbrug', use_column_width=True)
+        st.image(image, caption='Classification_AE6-Johannesbrug', use_column_width=True)
 
 
-
-
-# Required to let Streamlit instantiate our web app.  
 if __name__ == '__main__':
     main()
