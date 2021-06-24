@@ -89,7 +89,7 @@ def main():
 
     col1, mid, col2 = st.beta_columns([1,4,20])
     with col1:
-        st.image('resources/2.PNG', width=600)
+        st.image('http://34.253.89.98:5000/resources/2.PNG', width=600)
     with col2:
         st.write(' ')
 
