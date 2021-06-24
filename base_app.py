@@ -1,25 +1,4 @@
-"""
 
-    Simple Streamlit webserver application for serving developed classification
-    models.
-
-    Author: Explore Data Science Academy.
-
-    Note:
-    ---------------------------------------------------------------------
-    Please follow the instructions provided within the README.md file
-    located within this directory for guidance on how to use this script
-    correctly.
-    ---------------------------------------------------------------------
-
-    Description: This file is used to launch a minimal streamlit web
-    application. You are expected to extend the functionality of this script
-    as part of your predict project.
-
-    For further help with the Streamlit framework, see:
-
-    https://docs.streamlit.io/en/latest/
-"""
 # Streamlit dependencies
 import streamlit as st
 import joblib,os
@@ -70,11 +49,11 @@ def data_cleaning(tweet):
 
 
 # Vectorizer
-news_vectorizer = open("resources/cv.pkl","rb")
+news_vectorizer = open("cv.pkl","rb")
 tweet_cv = joblib.load(news_vectorizer) 
 
 # Loading raw data
-raw = pd.read_csv("resources/train.csv")
+raw = pd.read_csv("train.csv")
 
 def main():
     """Tweet Classifier App with Streamlit """
@@ -255,27 +234,27 @@ def main():
                 #y = raw[['sentiment']]
                 vect_text = tweet_cv.transform([text1]).toarray()
                 if model_choice == 'Log-Regression':
-                    predictor = load_prediction_models("resources/model.pkl")
+                    predictor = load_prediction_models("model.pkl")
                     prediction = predictor.predict(vect_text)
                     st.write(prediction)
                 elif model_choice == 'Log-Regression2':
-                    predictor = load_prediction_models("resources/model1.pkl")
+                    predictor = load_prediction_models("model1.pkl")
                     prediction = predictor.predict(vect_text)
                     # st.write(prediction)
                 elif model_choice == 'SVC-Linear1':
-                    predictor = load_prediction_models("resources/model2.pkl")
+                    predictor = load_prediction_models("model2.pkl")
                     prediction = predictor.predict(vect_text)
                     # st.write(prediction)
                 elif model_choice == 'SVC-linear2':
-                    predictor = load_prediction_models("resources/model1.pkl")
+                    predictor = load_prediction_models("model1.pkl")
                     prediction = predictor.predict(vect_text)
                     # st.write(prediction)
                 elif model_choice == 'Non-Linear_SVC1':
-                    predictor = load_prediction_models("resources/model1.pkl")
+                    predictor = load_prediction_models("model1.pkl")
                     prediction = predictor.predict(vect_text)
                     # st.write(prediction)
                 elif model_choice == 'Non-Linear_SVC2':
-                    predictor = load_prediction_models("resources/model5.pkl")
+                    predictor = load_prediction_models("model5.pkl")
                     prediction = predictor.predict(vect_text)
 				# st.write(prediction)
 
@@ -311,27 +290,27 @@ def main():
                 X1 = text_input[col].apply(cleaner)
                 vect_text = tweet_cv.transform([X1]).toarray()
                 if model_choice == 'Log-Regression':
-                    predictor = load_prediction_models("resources/model.pkl")
+                    predictor = load_prediction_models("model.pkl")
                     prediction = predictor.predict(vect_text)
                     # st.write(prediction)
                 elif model_choice == 'Log-Regression2':
-                    predictor = load_prediction_models("resources/model1.pkl")
+                    predictor = load_prediction_models("model1.pkl")
                     prediction = predictor.predict(vect_text)
                     # st.write(prediction)
                 elif model_choice == 'SVC-Linear1':
-                    predictor = load_prediction_models("resources/model2.pkl")
+                    predictor = load_prediction_models("model2.pkl")
                     prediction = predictor.predict(vect_text)
                     # st.write(prediction)
                 elif model_choice == 'SVC-Linear2':
-                    predictor = load_prediction_models("resources/model3.pkl")
+                    predictor = load_prediction_models("model3.pkl")
                     prediction = predictor.predict(vect_text)
 
                 elif model_choice == 'Non-Linear_SVC1':
-                    predictor = load_prediction_models("resources/model4.pkl")
+                    predictor = load_prediction_models("model4.pkl")
                     prediction = predictor.predict(vect_text)
 
                 elif model_choice == 'Non-Linear_SVC2':
-                    predictor = load_prediction_models("resources/model5.pkl")
+                    predictor = load_prediction_models("model5.pkl")
                     prediction = predictor.predict(vect_text)
 
                 
